@@ -83,7 +83,7 @@ app.node = new BootNode();
 // Create an IPFS client instance
 app.ipfs = IpfsApi({
   host: 'localhost',
-  port: 5001,
+  port: 5002,
   protocol: 'http',
   headers: {
     authorization: 'FLC ' //+ TOKEN
@@ -123,9 +123,29 @@ var server = http.createServer(function(req, res) {
 
   // You can define here your custom logic to handle the request
   // and then proxy the request.
-  proxy.web(req, res, {
-    target: url
-  });
+  // proxy.web(req, res, {
+  //   target: url
+  // });
+
+  // save video stream to ipfs
+  if (req.url === '/savetoipfs') {
+    var data = [];
+    req.on('data', function(chunk) {
+      data.push(chunk);
+    });
+    req.on('end', function() {
+      console.log('IPFS');
+      app.ipfs.add(data)
+        .then(function(response) {
+          console.log(response);
+          var ipfsId = response[0].hash;
+          console.log(ipfsId);;
+          res.end();
+        }).catch(function(err) {
+          console.error(err);
+        });
+    });
+  }
 }).listen(process.env.PROXY_PORT || 8800);
 
 Log.i(TAG, 'Proxy server starts at port http://v.wot.city');
